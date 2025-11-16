@@ -235,12 +235,13 @@ export class Player {
         // Energy Bar Specific Font Setup
         const barFontSize = usernameFontSize * 0.7; 
         ctx.font = `${barFontSize}px monospace`; 
+        ctx.textAlign = 'center';
+        // Ensure the bar renders just below the username by using a top baseline
+        ctx.textBaseline = 'top';
 
-        // Determine Y position for the energy bar, "hugging" the username tag
-        // barY sets the vertical middle (since textBaseline is 'middle'). 
-        // Setting it to usernameTagY (username baseline) + half bar height ensures
-        // the bar starts exactly where the username ends (baseline), providing a tighter hug.
-        const barY = usernameTagY + barFontSize / 2;
+        // Determine Y position for the energy bar, hugging the username tag but not overlapping
+        const verticalOffset = 2; // small spacing to avoid clipping into the label
+        const barY = usernameTagY + verticalOffset;
 
         // Measure the width of a single block character consistently
         const blockWidth = ctx.measureText(FILLED_BLOCK).width;
@@ -298,8 +299,8 @@ export class Player {
                 const margin = 1; 
                 const rectX = currentBlockCenterX - blockWidth / 2 - margin;
                 
-                // Adjust Y position and Height to make the outline 1px larger on top
-                const rectY = barY - barFontSize / 2 - margin - 1; 
+                // With top baseline, Y is the top of the text box; make the outline 1px larger on top
+                const rectY = barY - margin - 1; 
                 const rectW = blockWidth + 2 * margin;
                 const rectH = barFontSize + 2 * margin + 1;
                 
