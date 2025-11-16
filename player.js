@@ -215,7 +215,7 @@ export class Player {
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.lineWidth = 3; // Thicker stroke for visibility
 
-        const tagY = screenY - radius - 5; // Position slightly above the player circle
+        const tagY = screenY - radius - 8; // Position slightly above the player circle. Increased offset for safety against clipping.
         
         // Draw Username
         ctx.strokeText(this.username, screenX, tagY);
@@ -232,14 +232,15 @@ export class Player {
     drawEnergyBar(ctx, screenX, usernameTagY, usernameFontSize) {
         if (this.energyTimestamps.length === 0) return;
 
-        // Determine Y position for the energy bar, "hugging" the username tag
-        const barY = usernameTagY + usernameFontSize * 0.9; 
-
         // Energy Bar Specific Font Setup
         const barFontSize = usernameFontSize * 0.7; 
         ctx.font = `${barFontSize}px monospace`; 
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle'; 
+
+        // Determine Y position for the energy bar, "hugging" the username tag
+        // barY sets the vertical middle (since textBaseline is 'middle'). 
+        // Setting it to usernameTagY (username baseline) + half bar height ensures
+        // the bar starts exactly where the username ends (baseline), providing a tighter hug.
+        const barY = usernameTagY + barFontSize / 2;
 
         // Measure the width of a single block character consistently
         const blockWidth = ctx.measureText(FILLED_BLOCK).width;
