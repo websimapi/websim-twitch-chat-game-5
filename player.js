@@ -203,7 +203,8 @@ export class Player {
 
         // Draw Nametag Label
         // Use a minimum font size of 12px for readability, scaling up with tileSize
-        const fontSize = Math.max(12, tileSize * 0.6); 
+        const baseFontSize = Math.max(12, tileSize * 0.6); 
+        const fontSize = Math.max(10, baseFontSize * (2/3)); // Apply 2/3 scaling, ensuring a minimum size of 10px
         ctx.font = `${fontSize}px Arial, sans-serif`;
         
         // Setup for text rendering
@@ -215,7 +216,7 @@ export class Player {
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
         ctx.lineWidth = 3; // Thicker stroke for visibility
 
-        const tagY = screenY - radius - 8; // Position slightly above the player circle. Increased offset for safety against clipping.
+        const tagY = screenY - radius - 18; // Position slightly above the player circle, moved up 10px (8 + 10 = 18)
         
         // Draw Username
         ctx.strokeText(this.username, screenX, tagY);
