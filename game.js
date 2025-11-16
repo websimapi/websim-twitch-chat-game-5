@@ -85,6 +85,10 @@ export class Game {
     }
 
     addOrUpdatePlayer(chatter) {
+        if (!chatter || !chatter.id) {
+            console.error("Attempted to add or update player with invalid chatter data:", chatter);
+            return;
+        }
         let player = this.players.get(chatter.id);
 
         if (!player) {
