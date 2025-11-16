@@ -262,12 +262,16 @@ export class Player {
             let isDrainingCell = false;
 
             if (i < totalEnergyCells) {
-                if (i === 0) {
-                    // This is the currently draining cell
+                // Determine the index 'cellIndex' in this.energyTimestamps corresponding to visual slot 'i'
+                // We reverse the visual order: i=0 (leftmost filled) maps to newest cell; i=totalEnergyCells-1 maps to oldest (draining) cell.
+                const cellIndex = totalEnergyCells - 1 - i; 
+
+                if (cellIndex === 0) {
+                    // This is the currently draining cell (it is the rightmost filled block)
                     block = PARTIAL_BLOCKS[partialBlockIndex];
                     isDrainingCell = true;
-                } else {
-                    // This is a full, reserved cell (index > 0)
+                } else if (cellIndex > 0) {
+                    // This is a full, reserved cell (cellIndex > 0)
                     block = FILLED_BLOCK;
                 }
             } 
