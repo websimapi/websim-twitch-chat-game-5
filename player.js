@@ -112,7 +112,8 @@ export class Player {
 
             // Update flash state for visualization
             // Use a quick oscillation based on time
-            this.flashState = (Math.sin(now / 100) + 1) / 2; // Value between 0 and 1
+            // Reduced frequency (750) for a slower, smoother pulse effect
+            this.flashState = (Math.sin(now / 750) + 1) / 2; // Value between 0 and 1
 
             // Console log remaining time for the current draining energy cell (as requested)
             if (remainingMS > 0) {
@@ -295,9 +296,11 @@ export class Player {
                 // Define the bounding box for the block visually
                 const margin = 1; 
                 const rectX = currentBlockCenterX - blockWidth / 2 - margin;
-                const rectY = barY - barFontSize / 2 - margin;
+                
+                // Adjust Y position and Height to make the outline 1px larger on top
+                const rectY = barY - barFontSize / 2 - margin - 1; 
                 const rectW = blockWidth + 2 * margin;
-                const rectH = barFontSize + 2 * margin;
+                const rectH = barFontSize + 2 * margin + 1;
                 
                 ctx.strokeRect(rectX, rectY, rectW, rectH);
             }
