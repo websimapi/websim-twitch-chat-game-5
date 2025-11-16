@@ -15,8 +15,9 @@ const PARTIAL_BLOCKS = [
 
 const FILLED_BLOCK = '█'; // Full Block
 const EMPTY_BLOCK_VISUAL = '▒'; // Visual representation for empty slots
-const FILLED_COLOR = 'rgb(173, 216, 230)'; // Light Blue
-const EMPTY_COLOR_ALPHA = 'rgba(173, 216, 230, 0.4)'; // Semi-transparent Light Blue
+const BASE_COLOR_RGB = '173, 216, 230'; // Light Blue RGB components
+const FILLED_COLOR = `rgb(${BASE_COLOR_RGB})`; // Light Blue
+const EMPTY_COLOR_ALPHA = `rgba(${BASE_COLOR_RGB}, 0.4)`; // Semi-transparent Light Blue
 
 export class Player {
     constructor(id, username, color) {
@@ -283,33 +284,18 @@ export class Player {
 
             // Set color based on fill status
             if (i < totalEnergyCells) {
-                // Filled block or partial block (Light Blue)
-                ctx.fillStyle = FILLED_COLOR;
+                // If this is the draining cell, apply the pulsating alpha effect directly to the fill style
+                if (isDrainingCell) {
+                    // Use flashState (0 to 1) for subtle oscillation on opacity (e.g., 60% to 100%)
+                    const alpha = 0.6 + this.flashState * 0.4; 
+                    ctx.fillStyle = `rgba(${BASE_COLOR_RGB}, ${alpha})`;
+                } else {
+                    // Filled block (Light Blue, fixed opacity)
+                    ctx.fillStyle = FILLED_COLOR;
+                }
             } else {
                 // Empty block (Semi-transparent Light Blue)
                 ctx.fillStyle = EMPTY_COLOR_ALPHA;
-            }
-
-            // Draw flashing outline around the draining cell (index 0)
-            if (isDrainingCell) {
-                // Use flashState from player update for subtle oscillation
-                const maxOutlineWidth = 1.5; 
-                const outlineWidth = 0.5 + this.flashState * maxOutlineWidth;
-                const alpha = 0.4 + this.flashState * 0.6; 
-
-                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-                ctx.lineWidth = outlineWidth;
-                
-                // Define the bounding box for the block visually
-                const margin = 1; 
-                const rectX = currentBlockCenterX - blockWidth / 2 - margin;
-                
-                // With top baseline, Y is the top of the text box; make the outline 1px larger on top
-                const rectY = barY - margin - 1; 
-                const rectW = blockWidth + 2 * margin;
-                const rectH = barFontSize + 2 * margin + 1;
-                
-                ctx.strokeRect(rectX, rectY, rectW, rectH);
             }
 
             // Draw the block character
