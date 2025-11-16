@@ -1,7 +1,20 @@
 export const ENERGY_DURATION_MS = 3600 * 1000; // 1 hour (3600 seconds)
-const N_BAR_SEGMENTS = 8;
+
+const MAX_ENERGY_SLOTS = 12;
+// Block characters representing 0/8 to 7/8 fill. Index 0 is empty, Index 7 is nearly full/full.
+const PARTIAL_BLOCKS = [
+    ' ', // 0/8 (Space)
+    '▂', // 1/8
+    '▃', // 2/8
+    '▄', // 3/8
+    '▅', // 4/8
+    '▆', // 5/8
+    '▇', // 6/8
+    '█'  // 7/8 (Full)
+];
+
 const FILLED_BLOCK = '█'; // Full Block
-const EMPTY_BLOCK = '▒'; // Medium Shade
+const EMPTY_BLOCK_VISUAL = '▒'; // Visual representation for empty slots
 const FILLED_COLOR = 'rgb(173, 216, 230)'; // Light Blue
 const EMPTY_COLOR_ALPHA = 'rgba(173, 216, 230, 0.4)'; // Semi-transparent Light Blue
 
@@ -31,8 +44,10 @@ export class Player {
     }
 
     addEnergy() {
-        // Add current timestamp for a new energy cell
-        this.energyTimestamps.push(Date.now());
+        if (this.energyTimestamps.length < MAX_ENERGY_SLOTS) {
+            // Add current timestamp for a new energy cell
+            this.energyTimestamps.push(Date.now());
+        }
     }
 
     isPowered() {
@@ -178,24 +193,6 @@ export class Player {
         ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // 1. Flashing Outline for currently draining cell
-        if (this.isPowered()) {
-            const maxOutlineWidth = 4;
-            // Flashing effect: width varies between 1 and maxOutlineWidth based on flashState
-            const outlineWidth = 1 + this.flashState * (maxOutlineWidth - 1);
-            
-            // Color fading effect: using white/light color for emphasis
-            const alpha = 0.5 + this.flashState * 0.5; // Alpha between 0.5 and 1.0
-            
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-            ctx.lineWidth = outlineWidth;
-            
-            ctx.beginPath();
-            ctx.arc(screenX, screenY, radius + outlineWidth / 2, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-
-
         // Default player stroke
         ctx.strokeStyle = 'rgba(0,0,0,0.5)';
         ctx.lineWidth = 2;
@@ -232,13 +229,10 @@ export class Player {
     }
     
     drawEnergyBar(ctx, screenX, usernameTagY, usernameFontSize) {
-        // Calculate remaining segments
-        const remainingRatio = 1 - this.currentCellDrainRatio;
-        // Use floor to determine how many full segments remain
-        const filledSegments = Math.floor(remainingRatio * N_BAR_SEGMENTS);
-        
-        // Determine Y position for the energy bar (below the username tag)
-        const barY = usernameTagY + usernameFontSize * 1.1; // Offset below username
+        if (this.energyTimestamps.length === 0) return;
+
+        // Determine Y position for the energy bar, "hugging" the username tag
+        const barY = usernameTagY + usernameFontSize * 0.9; 
 
         // Energy Bar Specific Font Setup
         const barFontSize = usernameFontSize * 0.7; 
@@ -248,26 +242,70 @@ export class Player {
 
         // Measure the width of a single block character consistently
         const blockWidth = ctx.measureText(FILLED_BLOCK).width;
-        const totalBarWidth = blockWidth * N_BAR_SEGMENTS;
+        const totalBarWidth = blockWidth * MAX_ENERGY_SLOTS;
         const startX = screenX - totalBarWidth / 2;
 
-        // Draw the bar segment by segment
-        for (let i = 0; i < N_BAR_SEGMENTS; i++) {
-            const block = (i < filledSegments) ? FILLED_BLOCK : EMPTY_BLOCK;
-            
+        const totalEnergyCells = this.energyTimestamps.length;
+        
+        // Calculate remaining ratio (1.0 = full, 0.0 = empty) for the draining cell (index 0)
+        const remainingRatio = 1 - this.currentCellDrainRatio;
+        
+        // Calculate the index for PARTIAL_BLOCKS array (0 to 7) based on 8 levels of granularity
+        const partialBlockIndex = Math.max(0, Math.min(PARTIAL_BLOCKS.length - 1, Math.floor(remainingRatio * PARTIAL_BLOCKS.length)));
+        
+        for (let i = 0; i < MAX_ENERGY_SLOTS; i++) {
+            let block = EMPTY_BLOCK_VISUAL;
+            let isDrainingCell = false;
+
+            if (i < totalEnergyCells) {
+                if (i === 0) {
+                    // This is the currently draining cell
+                    block = PARTIAL_BLOCKS[partialBlockIndex];
+                    isDrainingCell = true;
+                } else {
+                    // This is a full, reserved cell (index > 0)
+                    block = FILLED_BLOCK;
+                }
+            } 
+
             // Calculate current block's center X position
             const currentBlockCenterX = startX + (i * blockWidth) + (blockWidth / 2);
 
+            ctx.save(); 
+
             // Set color based on fill status
-            if (i < filledSegments) {
-                // Filled block (Light Blue)
+            if (i < totalEnergyCells) {
+                // Filled block or partial block (Light Blue)
                 ctx.fillStyle = FILLED_COLOR;
             } else {
                 // Empty block (Semi-transparent Light Blue)
                 ctx.fillStyle = EMPTY_COLOR_ALPHA;
             }
-            
+
+            // Draw flashing outline around the draining cell (index 0)
+            if (isDrainingCell) {
+                // Use flashState from player update for subtle oscillation
+                const maxOutlineWidth = 1.5; 
+                const outlineWidth = 0.5 + this.flashState * maxOutlineWidth;
+                const alpha = 0.4 + this.flashState * 0.6; 
+
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.lineWidth = outlineWidth;
+                
+                // Define the bounding box for the block visually
+                const margin = 1; 
+                const rectX = currentBlockCenterX - blockWidth / 2 - margin;
+                const rectY = barY - barFontSize / 2 - margin;
+                const rectW = blockWidth + 2 * margin;
+                const rectH = barFontSize + 2 * margin;
+                
+                ctx.strokeRect(rectX, rectY, rectW, rectH);
+            }
+
+            // Draw the block character
             ctx.fillText(block, currentBlockCenterX, barY);
+            
+            ctx.restore(); 
         }
     }
 }
